@@ -34,8 +34,6 @@ jobs:
 
       - name: Install PHP Dependencies
         run: composer install --optimize-autoloader --ignore-platform-reqs
-        env:
-          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.COMPOSER_MT_ACCESS_TOKEN }}"} }'
 
       - name: Get changed files
         id: changed-files
