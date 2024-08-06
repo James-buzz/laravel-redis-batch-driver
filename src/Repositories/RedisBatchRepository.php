@@ -1,10 +1,14 @@
 <?php
 
-namespace Illuminate\Bus;
+namespace JamesBuzz\RedisBatchDriver\Repositories;
 
 use Carbon\CarbonImmutable;
 use Closure;
 use DateTimeInterface;
+use Illuminate\Bus\Batch;
+use Illuminate\Bus\BatchFactory;
+use Illuminate\Bus\PrunableBatchRepository;
+use Illuminate\Bus\UpdatedBatchJobCounts;
 use Illuminate\Redis\Connections\Connection;
 use Illuminate\Support\Str;
 use RedisException;
@@ -59,6 +63,10 @@ class RedisBatchRepository implements PrunableBatchRepository
             $this->sortedIDsKey(), $start, '-', ['LIMIT' => [0, $limit]]
         );
 
+        if (! $batchIds) {
+            return [];
+        }
+
         $batches = [];
         foreach ($batchIds as $batchId) {
             $batchData = $this->connection->client()->hGetAll($this->batchKey($batchId));
@@ -97,7 +105,7 @@ class RedisBatchRepository implements PrunableBatchRepository
      *
      * @throws RedisException
      */
-    public function store(PendingBatch $batch): ?Batch
+    public function store(\Illuminate\Bus\PendingBatch $batch): ?Batch
     {
         $batchId = (string) Str::orderedUuid();
         $now = time();
@@ -344,7 +352,7 @@ class RedisBatchRepository implements PrunableBatchRepository
      */
     protected function acquireLock($lockKey): bool|\Redis
     {
-        return $this->connection->client()->set($lockKey, 1, 'EX', 10, 'NX');
+        return $this->connection->client()->set($lockKey, 1, ['NX', 'EX' => 10]);
     }
 
     /**

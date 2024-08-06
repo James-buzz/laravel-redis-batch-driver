@@ -1,14 +1,13 @@
 <?php
 
-namespace JamesBuzz\RedisBatch;
+namespace JamesBuzz\RedisBatchDriver;
 
 use Illuminate\Bus\BatchFactory;
 use Illuminate\Bus\BatchRepository;
-use Illuminate\Bus\RedisBatchRepository;
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\ServiceProvider;
+use JamesBuzz\RedisBatchDriver\Repositories\RedisBatchRepository;
 
-class RedisBatchServiceProvider extends ServiceProvider implements DeferrableProvider
+class LaravelRedisBatchServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
@@ -19,11 +18,11 @@ class RedisBatchServiceProvider extends ServiceProvider implements DeferrablePro
      * Register the application services.
      */
     public function register(): void
-	{
+    {
         $this->app->singleton(RedisBatchRepository::class, function ($app) {
             return new RedisBatchRepository(
                 $app->make(BatchFactory::class),
-                $app->make('redis')->connection($app->config->get('queue.batching.database', 'default')),
+                $app->make('redis')->connection($app->config->get('queue.batching.redis_connection', 'default')),
                 $app->config->get('queue.batching.table', 'job_batches')
             );
         });
@@ -37,11 +36,9 @@ class RedisBatchServiceProvider extends ServiceProvider implements DeferrablePro
 
     /**
      * Get the services provided by the provider.
-     *
-     * @return array
      */
     public function provides(): array
-	{
+    {
         $batchDriver = $this->app['config']->get('queue.batching.driver', 'database');
 
         if ($batchDriver === 'redis') {
