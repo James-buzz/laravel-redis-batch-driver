@@ -1,0 +1,44 @@
+{
+	"name": "james-buzz/redis-batch-driver",
+	"description": "A package to handle batch processes using Redis as the DB in Laravel applications.",
+	"type": "library",
+	"license": "MIT",
+	"version": "0.1.0",
+	"authors": [
+		{
+			"name": "James Lomax",
+			"email": "contact@james.buzz",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": "^8.2",
+		"illuminate/support": "^10.0|^11.0",
+		"illuminate/bus": "^10.0|^11.0",
+		"illuminate/database": "^10.0|^11.0",
+		"illuminate/redis": "^10.0|^11.0"
+	},
+	"require-dev": {
+		"laravel/pint": "^1.14",
+		"larastan/larastan": "^2.9",
+		"orchestra/testbench": "^9.2"
+	},
+	"scripts": {
+		"format": "vendor/bin/pint",
+		"analyse": "vendor/bin/phpstan analyse src"
+	},
+	"autoload": {
+		"psr-4": {
+			"JamesBuzz\\RedisBatch\\": "src/"
+		}
+	},
+	"extra": {
+		"laravel": {
+			"providers": [
+				"JamesBuzz\\RedisBatch\\RedisBatchServiceProvider"
+			]
+		}
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
+}
