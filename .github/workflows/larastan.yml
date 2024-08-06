@@ -1,0 +1,63 @@
+name: Static Code Analysis
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
+    types: [ checks_requested ]
+
+jobs:
+  larastan:
+    runs-on: ubuntu-latest
+
+    env:
+      PHP_VERSION: 8.3 # Update the PHP version when upgrading
+      ENVIRONMENT: larastan
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+
+      - name: Cache Composer dependencies
+        id: cache-composer
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-composer
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ env.ENVIRONMENT }}-${{env.cache-name}}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install PHP Dependencies
+        run: composer install --optimize-autoloader --ignore-platform-reqs
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.COMPOSER_MT_ACCESS_TOKEN }}"} }'
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+
+      - name: Run Larastan
+        run: |
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+          PHP_FILES=""
+          for FILE in $CHANGED_FILES; do
+            if [[ $FILE == *.php ]]; then
+              # Check if the file is within the specified directories
+              if [[ $FILE == src/* ]]; then
+                PHP_FILES="$PHP_FILES $FILE"
+              else
+                echo "Skipping analysis for $FILE, not within specified directories."
+              fi
+            fi
+          done
+          if [ -n "$PHP_FILES" ]; then
+            echo "Analysing PHP files..."
+            ./vendor/bin/phpstan analyse --memory-limit=2G $PHP_FILES || exit 1
+          else
+            echo "No applicable PHP files have changed."
+          fi
