@@ -161,14 +161,11 @@ class RedisBatchRepository implements PrunableBatchRepository
     {
         $batchKey = $this->batchKey($batchId);
 
-        $transaction = $this->executeWithLock($batchId, function () use ($batchId, $batchKey, $jobId) {
-            $this->connection->client()->hIncrBy($batchKey, 'pending_jobs', -1);
-            $this->connection->client()->hGet($batchKey, 'failed_jobs');
+        $this->executeWithLock($batchId, function () use ($batchId, $batchKey, $jobId, &$pendingJobs, &$failedJobs) {
+            $pendingJobs = $this->connection->client()->hIncrBy($batchKey, 'pending_jobs', -1);
+            $failedJobs = $this->connection->client()->hGet($batchKey, 'failed_jobs');
             $this->connection->client()->sRem($this->failedJobsKey($batchId), $jobId);
         });
-
-        $pendingJobs = $transaction[0];
-        $failedJobs = $transaction[1];
 
         return new UpdatedBatchJobCounts(
             $pendingJobs,
